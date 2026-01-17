@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QD STUDIO AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        qd: {
+                            bg: '#030008',
+                            panel: '#0e001a',
+                            pink: '#ff00ff',
+                            blue: '#00ffff',
+                            violet: '#bc13fe',
+                            dark: '#050110'
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'glow': 'glow 2s ease-in-out infinite alternate',
+                    },
+                    keyframes: {
+                        glow: {
+                            '0%': { boxShadow: '0 0 5px #bc13fe' },
+                            '100%': { boxShadow: '0 0 20px #ff00ff, 0 0 10px #00ffff' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;500;700&family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body { 
+            background-color: #030008;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(188, 19, 254, 0.15) 0%, transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(0, 255, 255, 0.15) 0%, transparent 25%);
+            color: white; 
+            font-family: 'Rajdhani', sans-serif;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .glass-panel {
+            background: rgba(14, 0, 26, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .neon-border-pink { border: 1px solid rgba(255, 0, 255, 0.5); box-shadow: 0 0 10px rgba(255, 0, 255, 0.2); }
+        .neon-border-blue { border: 1px solid rgba(0, 255, 255, 0.5); box-shadow: 0 0 10px rgba(0, 255, 255, 0.2); }
+        
+        .code-font { font-family: 'JetBrains Mono', monospace; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #030008; }
+        ::-webkit-scrollbar-thumb { background: #bc13fe; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #ff00ff; }
+    </style>
+    <!-- CRITICAL: Placeholder for API Key Injection -->
+    <script>
+        // __ENV_INJECTION__
+    </script>
+    <script type="importmap">
+{
+  "imports": {
+    "react-dom/client": "https://esm.sh/react-dom@^19.2.3/client",
+    "@google/genai": "https://esm.sh/@google/genai@^1.35.0",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
+  }
+}
+</script>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+</body>
+</html>
