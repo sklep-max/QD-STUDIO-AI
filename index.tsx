@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import { GoogleGenAI } from '@google/genai';
 
-// --- DEFINICJE TRYBÓW I PODKATEGORII ---
+// --- DEFINICJE TRYBÓW ---
 
 type ModeType = 'skript' | 'discord' | 'web' | 'plugin' | 'hosting';
 
@@ -46,37 +46,27 @@ Jesteś QD-STUDIO-AI. Potężnym, wielozadaniowym generatorem kodu.
 ### ZASADA NAJWAŻNIEJSZA - KOMPLETNOŚĆ (ZERO SKRÓTÓW):
 Masz pisać **PEŁNE, DZIAŁAJĄCE APLIKACJE**. 
 ZABRANIAM używania komentarzy typu: "// reszta kodu tutaj", "// powtórz dla innych komend", "// dodaj logikę".
-Użytkownik ma skopiować kod, wkleić i uruchomić. Kod musi zawierać wszystkie importy, pełną konfigurację, pętle główne.
+Użytkownik ma skopiować kod, wkleić i uruchomić.
 
 ### INSTRUKCJE DLA AKTUALNEGO ZADANIA:
 
 1. **BOT DISCORD:**
    - **INTENTY:** Zawsze definiuj \`intents.message_content = True\` (Python) lub \`GatewayIntentBits.MessageContent\` (JS).
-   - **STRUKTURA:** Używaj \`commands.Bot\` (Py) lub \`Client\` (JS).
-   - **CZYSTY KOD:** Kod ma być konkretny. Żadnych zbędnych instrukcji o 2FA, chyba że użytkownik o to pyta.
+   - **CZYSTY KOD:** Kod ma być konkretny.
 
 2. **SKRIPT (Minecraft):**
    - **METADATA GUI:** Używaj WYŁĄCZNIE \`set metadata tag "id" of player to chest inventory\`.
-   - **ZMIENNE:** Używaj zmiennych lokalnych \`{_zmienna}\`.
 
 3. **STRONA WWW:**
-   - **JEDEN PLIK (Domyślnie):** Cały CSS w <style>, JS w <script>.
+   - **JEDEN PLIK:** Cały CSS w <style>, JS w <script>.
    - **DESIGN:** Nowoczesny, responsywny, Ciemny Motyw (QD Style).
 
-4. **PLUGIN JAVA:**
-   - Klasa rozszerza \`JavaPlugin\`. Rejestracja w \`onEnable\`.
-
-5. **SYSTEM / HOSTING (NOWOŚĆ):**
-   - **BASH:** Każdy skrypt musi zaczynać się od \`#!/bin/bash\` i mieć obsługę błędów (\`set -e\`).
-   - **PTERODACTYL:** Jeśli CSS -> Generuj kod gotowy do wklejenia w ustawieniach wyglądu.
-   - **DOCKER:** Używaj wersji compose 3.8+.
-   - **NGINX:** Pełne bloki server { ... } z SSL (certbot placeholder).
+4. **SYSTEM / HOSTING:**
+   - **BASH:** \`#!/bin/bash\` na początku, \`set -e\`.
+   - **DOCKER:** compose 3.8+.
 
 ### OBRAZY (VISION):
-Jeśli użytkownik prześle obraz, przeanalizuj go dokładnie. 
-- Jeśli to błąd w konsoli -> Napraw kod.
-- Jeśli to design -> Napisz kod odtwarzający ten wygląd (HTML/CSS).
-- Jeśli to schemat -> Zaimplementuj logikę.
+Analizuj przesłane obrazy (błędy, designy, schematy) i generuj odpowiedni kod.
 
 ### STYL ODPOWIEDZI:
 - **JĘZYK:** Polski.
@@ -146,7 +136,6 @@ const MessageItem: React.FC<MessageItemProps> = ({ role, content, image }) => {
           </span>
         </div>
 
-        {/* Display User Image if exists */}
         {image && (
             <div className="mb-4 flex justify-end">
                 <img src={image} alt="User upload" className="max-h-48 rounded border border-white/20" />
@@ -183,8 +172,8 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ onSave }) => {
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-qd-blue to-qd-pink"></div>
                 <h2 className="text-xl font-bold text-white mb-2 tracking-widest">SYSTEM SECURITY</h2>
                 <p className="text-gray-400 text-xs mb-6 font-mono">
-                    Wymagana autoryzacja. Wprowadź klucz API Gemini, aby uzyskać dostęp do rdzenia QD STUDIO.
-                    <br/><span className="text-gray-600">Klucz zostanie zapisany lokalnie w Twojej przeglądarce.</span>
+                    Wymagana autoryzacja. Wprowadź klucz API Gemini.
+                    <br/><span className="text-gray-600">Klucz zapisywany jest lokalnie w przeglądarce.</span>
                 </p>
                 
                 <input 
@@ -204,7 +193,7 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ onSave }) => {
                 
                 <div className="mt-4 text-center">
                     <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-[10px] text-gray-500 hover:text-gray-300 underline underline-offset-2">
-                        Nie masz klucza? Pobierz go tutaj (Google AI Studio)
+                        Pobierz klucz API (Google AI Studio)
                     </a>
                 </div>
             </div>
@@ -212,8 +201,6 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ onSave }) => {
     );
 };
 
-
-// --- HELPER FOR IMAGE ---
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -227,30 +214,25 @@ const fileToBase64 = (file: File): Promise<string> => {
 
 const App = () => {
   const [messages, setMessages] = useState<{role: string, content: string, image?: string}[]>([
-    { role: 'model', content: "SYSTEM QD STUDIO AI [ONLINE].\nWybierz kategorię (np. Hosting/Panel) i technologię." }
+    { role: 'model', content: "SYSTEM QD STUDIO AI [ONLINE].\nWybierz kategorię i technologię." }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   
-  // API KEY STATE
   const [apiKey, setApiKey] = useState<string>('');
   const [showKeyModal, setShowKeyModal] = useState(false);
 
-  // States for selection
   const [activeModeId, setActiveModeId] = useState<ModeType>('skript');
   const [activeSubOption, setActiveSubOption] = useState<string>(MODES[0].subOptions[0]);
 
   const scrollEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Initialize API Key (Env or LocalStorage)
   useEffect(() => {
-    // 1. Try Environment Variable (Node/Server injection)
-    const envKey = (window as any).ENV?.API_KEY || process.env.API_KEY;
-    
-    // 2. Try LocalStorage
+    // Bezpieczne pobieranie klucza - brak process.env
+    const envKey = (window as any).ENV?.API_KEY;
     const storedKey = localStorage.getItem('QD_GENAI_API_KEY');
 
     if (envKey && envKey.length > 5) {
@@ -274,7 +256,6 @@ const App = () => {
       setShowKeyModal(true);
   }
 
-  // Update sub-option when main mode changes
   useEffect(() => {
     const mode = MODES.find(m => m.id === activeModeId);
     if (mode) {
@@ -304,7 +285,6 @@ const App = () => {
   const generateResponse = async (promptText: string) => {
     if (!promptText.trim() && !selectedImage) return;
 
-    // Add user message to state immediately
     const userMsg = { 
         role: 'user', 
         content: promptText, 
@@ -315,12 +295,11 @@ const App = () => {
     setMessages(newMessages);
     setIsLoading(true);
     setInput('');
-    // Clear image selection state after adding to chat, but keep it for API call logic below
     const imageToSend = selectedImage;
     removeImage();
 
     try {
-      if (!apiKey) throw new Error("BRAK KLUCZA API. Skonfiguruj go w ustawieniach.");
+      if (!apiKey) throw new Error("BRAK KLUCZA API.");
 
       const ai = new GoogleGenAI({ apiKey });
       
@@ -367,7 +346,7 @@ const App = () => {
       setMessages(prev => [...prev, { role: 'model', content: text }]);
 
     } catch (err: any) {
-      setMessages(prev => [...prev, { role: 'model', content: `BŁĄD KRYTYCZNY: ${err.message}` }]);
+      setMessages(prev => [...prev, { role: 'model', content: `BŁĄD: ${err.message}` }]);
     } finally {
       setIsLoading(false);
     }
@@ -377,7 +356,6 @@ const App = () => {
     generateResponse(input);
   };
 
-  // --- NOWY CZAT ---
   const handleNewChat = () => {
     setMessages([
         { role: 'model', content: "SESJA ZRESETOWANA.\nGotowość do nowego zadania." }
@@ -394,10 +372,9 @@ const App = () => {
       
       {showKeyModal && <ApiKeyModal onSave={handleSaveKey} />}
 
-      {/* Void Background */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_rgba(20,20,20,1),_#000000)] pointer-events-none"></div>
       
-      {/* SIDEBAR (Desktop) */}
+      {/* SIDEBAR */}
       <div className="w-64 hidden md:flex flex-col border-r border-white/5 bg-black/90 z-20">
         <div className="p-6 border-b border-white/5">
           <h1 className="text-2xl font-bold tracking-tighter text-white">
@@ -406,7 +383,6 @@ const App = () => {
           <div className="text-[8px] font-mono text-gray-500 mt-1 tracking-[0.2em] uppercase">V 3.1 VISION</div>
         </div>
         
-        {/* NEW CHAT BUTTON SIDEBAR */}
         <div className="p-4">
             <button 
                 onClick={handleNewChat}
@@ -425,9 +401,6 @@ const App = () => {
               <strong className="text-white block mb-1">TECHNOLOGIA:</strong>
               <span className="font-mono text-gray-400">{activeSubOption}</span>
             </div>
-            <div className="pt-4 border-t border-white/5">
-              <p>Bot generuje kod w czasie rzeczywistym. Teraz obsługuje również analizę obrazów (zrzuty ekranu, designy).</p>
-            </div>
         </div>
 
         <div className="mt-auto p-6">
@@ -443,7 +416,6 @@ const App = () => {
       {/* MAIN CHAT */}
       <div className="flex-1 flex flex-col relative z-10">
         
-        {/* TOP BAR ACTION (Mobile + Desktop quick access) */}
         <div className="absolute top-4 right-4 z-50">
             <button 
                 onClick={handleNewChat}
@@ -453,9 +425,8 @@ const App = () => {
             </button>
         </div>
 
-        {/* Messages Area */}
         <div className="flex-1 overflow-y-auto p-4 md:p-12 custom-scrollbar scroll-smooth">
-          <div className="max-w-5xl mx-auto pb-80 pt-10"> {/* Increased padding for bigger UI at bottom */}
+          <div className="max-w-5xl mx-auto pb-80 pt-10">
             {messages.map((m, i) => (
               <MessageItem key={i} role={m.role} content={m.content} image={m.image} />
             ))}
@@ -474,11 +445,10 @@ const App = () => {
           </div>
         </div>
 
-        {/* CONTROLS AREA */}
+        {/* CONTROLS */}
         <div className="absolute bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-black via-black to-transparent pt-10 pb-6 px-4 md:px-12">
           <div className="max-w-5xl mx-auto flex flex-col gap-3">
             
-            {/* 1. GŁÓWNY WYBÓR (GRID) */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                 {MODES.map(mode => {
                     const isActive = activeModeId === mode.id;
@@ -495,9 +465,7 @@ const App = () => {
                                 }
                             `}
                         >   
-                            {/* Kolorowe podświetlenie aktywnego */}
                             {isActive && <div className={`absolute inset-0 bg-${mode.color} opacity-10`}></div>}
-                            
                             <div className={`w-1.5 h-1.5 rounded-full transition-colors ${isActive ? `bg-${mode.color}` : 'bg-gray-700'}`}></div>
                             <span className="relative z-10">{mode.label}</span>
                         </button>
@@ -505,7 +473,6 @@ const App = () => {
                 })}
             </div>
 
-            {/* 2. SZCZEGÓŁOWY WYBÓR (CHIPS / ZAZNACZNIKI) */}
             <div className="flex flex-wrap gap-2 items-center bg-black/60 border border-white/5 p-2 backdrop-blur-sm">
                 <span className="text-[9px] text-gray-500 font-mono uppercase mr-2 tracking-widest px-2">
                     TECHNOLOGIA:
@@ -527,10 +494,8 @@ const App = () => {
                 ))}
             </div>
 
-            {/* 3. INPUT BOX & IMAGE PREVIEW */}
             <div className="relative bg-black border border-white/10 focus-within:border-white/30 transition-colors shadow-2xl group mt-1 flex flex-col">
                 
-                {/* Image Preview Area */}
                 {previewUrl && (
                     <div className="absolute -top-16 left-0 p-2 z-10">
                         <div className="relative group/img">
@@ -553,7 +518,6 @@ const App = () => {
                   className="w-full bg-transparent border-none outline-none text-gray-200 text-sm font-mono min-h-[50px] max-h-[150px] resize-none p-4 pl-12 custom-scrollbar placeholder-gray-700 relative z-10"
                 />
 
-                {/* FILE INPUT HIDDEN */}
                 <input 
                     type="file" 
                     ref={fileInputRef}
@@ -562,7 +526,6 @@ const App = () => {
                     className="hidden"
                 />
 
-                {/* CLIP ICON */}
                 <button 
                     onClick={() => fileInputRef.current?.click()}
                     className="absolute bottom-3 left-3 text-gray-500 hover:text-white transition-colors z-20"
