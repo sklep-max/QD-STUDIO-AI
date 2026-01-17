@@ -169,6 +169,50 @@ const MessageItem: React.FC<MessageItemProps> = ({ role, content, image }) => {
   );
 };
 
+// --- API KEY MODAL ---
+interface ApiKeyModalProps {
+    onSave: (key: string) => void;
+}
+
+const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ onSave }) => {
+    const [key, setKey] = useState('');
+
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+            <div className="w-full max-w-md bg-[#0a0a0a] border border-qd-violet/50 shadow-[0_0_50px_rgba(188,19,254,0.2)] p-8 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-qd-blue to-qd-pink"></div>
+                <h2 className="text-xl font-bold text-white mb-2 tracking-widest">SYSTEM SECURITY</h2>
+                <p className="text-gray-400 text-xs mb-6 font-mono">
+                    Wymagana autoryzacja. Wprowadź klucz API Gemini, aby uzyskać dostęp do rdzenia QD STUDIO.
+                    <br/><span className="text-gray-600">Klucz zostanie zapisany lokalnie w Twojej przeglądarce.</span>
+                </p>
+                
+                <input 
+                    type="password" 
+                    value={key}
+                    onChange={(e) => setKey(e.target.value)}
+                    placeholder="Wklej klucz API tutaj..."
+                    className="w-full bg-black border border-white/10 text-white p-3 text-sm font-mono focus:border-qd-violet outline-none transition-colors mb-4"
+                />
+                
+                <button 
+                    onClick={() => key.trim() && onSave(key)}
+                    className="w-full bg-qd-violet/10 border border-qd-violet text-qd-violet hover:bg-qd-violet hover:text-white py-3 text-xs font-bold tracking-[0.2em] transition-all uppercase"
+                >
+                    AKTYWUJ SYSTEM
+                </button>
+                
+                <div className="mt-4 text-center">
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-[10px] text-gray-500 hover:text-gray-300 underline underline-offset-2">
+                        Nie masz klucza? Pobierz go tutaj (Google AI Studio)
+                    </a>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
 // --- HELPER FOR IMAGE ---
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -190,12 +234,45 @@ const App = () => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   
+  // API KEY STATE
+  const [apiKey, setApiKey] = useState<string>('');
+  const [showKeyModal, setShowKeyModal] = useState(false);
+
   // States for selection
   const [activeModeId, setActiveModeId] = useState<ModeType>('skript');
   const [activeSubOption, setActiveSubOption] = useState<string>(MODES[0].subOptions[0]);
 
   const scrollEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Initialize API Key (Env or LocalStorage)
+  useEffect(() => {
+    // 1. Try Environment Variable (Node/Server injection)
+    const envKey = (window as any).ENV?.API_KEY || process.env.API_KEY;
+    
+    // 2. Try LocalStorage
+    const storedKey = localStorage.getItem('QD_GENAI_API_KEY');
+
+    if (envKey && envKey.length > 5) {
+        setApiKey(envKey);
+    } else if (storedKey) {
+        setApiKey(storedKey);
+    } else {
+        setShowKeyModal(true);
+    }
+  }, []);
+
+  const handleSaveKey = (key: string) => {
+      localStorage.setItem('QD_GENAI_API_KEY', key);
+      setApiKey(key);
+      setShowKeyModal(false);
+  };
+
+  const clearKey = () => {
+      localStorage.removeItem('QD_GENAI_API_KEY');
+      setApiKey('');
+      setShowKeyModal(true);
+  }
 
   // Update sub-option when main mode changes
   useEffect(() => {
@@ -243,13 +320,10 @@ const App = () => {
     removeImage();
 
     try {
-      const apiKey = process.env.API_KEY || (window as any).ENV?.API_KEY;
-      if (!apiKey) throw new Error("BRAK KLUCZA API");
+      if (!apiKey) throw new Error("BRAK KLUCZA API. Skonfiguruj go w ustawieniach.");
 
       const ai = new GoogleGenAI({ apiKey });
       
-      // Prepare history (text only for now in history to keep simple, or handling multimodal history is complex)
-      // For simplicity in this edit, we send history as text. 
       const history = newMessages.slice(0, -1).map(m => ({
         role: m.role,
         parts: [{ text: m.content }]
@@ -270,7 +344,6 @@ const App = () => {
 
       if (imageToSend) {
         const base64Data = await fileToBase64(imageToSend);
-        // Remove data:image/png;base64, prefix
         const base64String = base64Data.split(',')[1];
         
         contentsParts.unshift({
@@ -282,11 +355,10 @@ const App = () => {
       }
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image', // Używamy modelu zdolnego do vision
+        model: 'gemini-2.5-flash-image',
         contents: [...history, { role: 'user', parts: contentsParts }],
         config: {
           systemInstruction: SYSTEM_INSTRUCTION,
-        //   thinkingConfig: { thinkingBudget: 4096 }, // Flash Image doesn't support thinking yet, using flash-image
           temperature: 0.3, 
         }
       });
@@ -320,6 +392,8 @@ const App = () => {
   return (
     <div className="flex h-screen w-full bg-[#050505] text-white font-sans overflow-hidden relative selection:bg-white/20">
       
+      {showKeyModal && <ApiKeyModal onSave={handleSaveKey} />}
+
       {/* Void Background */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_rgba(20,20,20,1),_#000000)] pointer-events-none"></div>
       
@@ -357,6 +431,9 @@ const App = () => {
         </div>
 
         <div className="mt-auto p-6">
+            <button onClick={clearKey} className="text-[9px] text-gray-600 hover:text-white transition-colors uppercase font-mono mb-2 w-full text-left">
+                [ ZMIEŃ KLUCZ API ]
+            </button>
             <div className="text-[9px] text-red-500/50 font-mono text-center border-t border-white/5 pt-2">
                 QD-STUDIO-AI
             </div>

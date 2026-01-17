@@ -67,6 +67,10 @@
     <!-- CRITICAL: Placeholder for API Key Injection -->
     <script>
         // __ENV_INJECTION__
+        // Fallback for static hosting where replacement doesn't happen
+        if (typeof window.ENV === 'undefined') {
+            window.ENV = { API_KEY: "" }; 
+        }
     </script>
     <script type="importmap">
 {
